@@ -57,7 +57,7 @@ class TaskManager(BaseManager):
         self.task_config = task
         self.context_data = context_data
         self.connected_through_dashboard = connected_through_dashboard
-        self.enforce_streaming = True
+        self.enforce_streaming = kwargs.get("enforce_streaming", False)
         self.callee_silent = True
         self.yield_chunks = yield_chunks
         # Set up communication queues between processes
@@ -89,7 +89,7 @@ class TaskManager(BaseManager):
         self.input_parameters = input_parameters
         
         # Recording
-        self.should_record = True
+        self.should_record = False
         self.conversation_recording= {
             "input": {
                 'data': b'',
@@ -102,9 +102,9 @@ class TaskManager(BaseManager):
         }
         #IO HANDLERS
         if task_id == 0:
-            self.default_io = self.task_config["tools_config"]["output"]["provider"] == "twilio"
+            self.default_io = self.task_config["tools_config"]["output"]["provider"] == 'default'
             logger.info(f"Connected via websocket")
-            self.should_record = self.task_config["tools_config"]["output"]["provider"] == "twilio" and self.enforce_streaming #In this case, this is a websocket connection and we should record 
+            self.should_record = self.task_config["tools_config"]["output"]["provider"] == 'default' and self.enforce_streaming #In this case, this is a websocket connection and we should record 
             self.__setup_input_handlers(connected_through_dashboard, input_queue, self.should_record)
         self.__setup_output_handlers(connected_through_dashboard, output_queue)
 
