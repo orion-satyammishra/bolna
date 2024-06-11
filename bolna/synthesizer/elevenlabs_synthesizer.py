@@ -19,7 +19,7 @@ logger = configure_logger(__name__)
 
 class ElevenlabsSynthesizer(BaseSynthesizer):
     def __init__(self, voice, voice_id, model="eleven_multilingual_v1", audio_format="mp3", sampling_rate="16000",
-                 stream=False, buffer_size=400, temperature = 0.9, similarity_boost = 0.5, synthesier_key=None, 
+                 stream=False, buffer_size=400, temperature = 0.5, similarity_boost = 0.5, synthesier_key=None, 
                  caching=True, **kwargs):
         super().__init__(stream)
         self.api_key = os.environ["ELEVENLABS_API_KEY"] if synthesier_key is None else synthesier_key
@@ -39,13 +39,12 @@ class ElevenlabsSynthesizer(BaseSynthesizer):
         self.last_text_sent = False
         self.text_queue = deque()
         self.meta_info = None
-        self.temperature = 0.8
+        self.temperature = temperature
         self.similarity_boost = similarity_boost
         self.caching = caching
         if self.caching:
             self.cache = InmemoryScalarCache()
         self.synthesized_characters = 0
-        self.previous_request_ids = []
 
     # Ensuring we only do wav output for now
     def get_format(self, format, sampling_rate):
@@ -75,7 +74,6 @@ class ElevenlabsSynthesizer(BaseSynthesizer):
                 },
                 "xi_api_key": self.api_key,
             }
-            
             await self.websocket_connection.send(json.dumps(bos_message))
             self.connection_open = True
 
@@ -144,8 +142,8 @@ class ElevenlabsSynthesizer(BaseSynthesizer):
             "text": text,
             "model_id": self.model,
             "voice_settings": {
-                "stability": self.temperature,
-                "similarity_boost": self.similarity_boost,
+                "stability": 0.4,
+                "similarity_boost": 0.5,
                 "optimize_streaming_latency": 3
             }
         }
@@ -193,7 +191,7 @@ class ElevenlabsSynthesizer(BaseSynthesizer):
             else:
                 while True:
                     message = await self.internal_queue.get()
-                    logger.info(f"Generating TTS response for message: {message}, using mulaw {self.use_mulaw}")
+                    logger.info(f"Generating TTS response for message: {message}")
                     meta_info, text = message.get("meta_info"), message.get("data")
                     if self.caching:
                         if self.cache.get(text):

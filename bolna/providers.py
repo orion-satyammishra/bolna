@@ -1,7 +1,7 @@
 from .synthesizer import PollySynthesizer, XTTSSynthesizer, ElevenlabsSynthesizer, OPENAISynthesizer, FourieSynthesizer, DeepgramSynthesizer
 from .transcriber import DeepgramTranscriber, WhisperTranscriber
-from .input_handlers import DefaultInputHandler, TwilioInputHandler, ExotelInputHandler, PlivoInputHandler
-from .output_handlers import DefaultOutputHandler, TwilioOutputHandler, ExotelOutputHandler, PlivoOutputHandler
+from .input_handlers import DefaultInputHandler, TwilioInputHandler, ExotelInputHandler
+from .output_handlers import DefaultOutputHandler, TwilioOutputHandler, ExotelOutputHandler
 from .llms import OpenAiLLM, LiteLLM
 
 SUPPORTED_SYNTHESIZER_MODELS = {
@@ -29,28 +29,23 @@ SUPPORTED_LLM_PROVIDERS = {
     'vllm': OpenAiLLM,
     'anyscale': LiteLLM,
     'custom': OpenAiLLM,
-    'ola': OpenAiLLM,
-    'groq': LiteLLM
+    'ola': OpenAiLLM
 }
 SUPPORTED_INPUT_HANDLERS = {
     'default': DefaultInputHandler,
     'twilio': TwilioInputHandler,
-    'exotel': ExotelInputHandler,
-    'plivo': PlivoInputHandler
+    'exotel': ExotelInputHandler
 }
 SUPPORTED_INPUT_TELEPHONY_HANDLERS = {
     'twilio': TwilioInputHandler,
-    'exotel': ExotelInputHandler,
-    'plivo': PlivoInputHandler
+    'exotel': ExotelInputHandler
 }
 SUPPORTED_OUTPUT_HANDLERS = {
     'default': DefaultOutputHandler,
     'twilio': TwilioOutputHandler,
-    'exotel': ExotelOutputHandler,
-    'plivo': PlivoOutputHandler
+    'exotel': ExotelOutputHandler
 }
 SUPPORTED_OUTPUT_TELEPHONY_HANDLERS = {
     'twilio': TwilioOutputHandler,
-    'exotel': ExotelOutputHandler,
-    'plivo': PlivoOutputHandler
+    'exotel': ExotelOutputHandler
 }

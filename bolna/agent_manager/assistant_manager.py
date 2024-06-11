@@ -1,12 +1,22 @@
 import time
 from .base_manager import BaseManager
 from .task_manager import TaskManager
+from datetime import datetime
 from bolna.helpers.logger_config import configure_logger
-from bolna.models import AGENT_WELCOME_MESSAGE
-from bolna.helpers.utils import update_prompt_with_context
-
+from pymongo import MongoClient
+import os
 logger = configure_logger(__name__)
-
+def mongodb_connection():
+    """
+    Establishes a connection to the MongoDB database using the environment variables 'MONGO_URL' and 'MONGO_DATABASE'.
+    """
+    try:
+        mongo_client = MongoClient(os.getenv('MONGODB_URI'))
+        db = mongo_client[os.getenv('MONGO_DATABASE')]
+    except ValueError as e:
+        raise ValueError(f"Error in mongodb_connection: {e.args[0]}")
+    return db
+db = mongodb_connection()
 
 class AssistantManager(BaseManager):
     def __init__(self, agent_config, ws=None, assistant_id=None, context_data=None, conversation_history=None,
@@ -26,7 +36,6 @@ class AssistantManager(BaseManager):
         self.output_queue = output_queue
         self.kwargs = kwargs
         self.conversation_history = conversation_history
-        self.kwargs['agent_welcome_message'] = update_prompt_with_context(agent_config.get('agent_welcome_message', AGENT_WELCOME_MESSAGE), context_data)
 
     async def run(self, local=False, run_id=None):
         """
@@ -34,9 +43,10 @@ class AssistantManager(BaseManager):
         """
         if run_id:
             self.run_id = run_id
-
+        result = {}
         input_parameters = None
         for task_id, task in enumerate(self.tasks):
+
             logger.info(f"Running task {task_id} {task} and sending kwargs {self.kwargs}")
             task_manager = TaskManager(self.agent_config.get("agent_name", self.agent_config.get("assistant_name")),
                                        task_id, task, self.websocket,
@@ -56,7 +66,20 @@ class AssistantManager(BaseManager):
 
                 # removing context_data from non-conversational tasks
                 self.context_data = None
-            logger.info(f"task_output {task_output}")
+            if task["task_type"] == "conversation":
+                result = task_output.copy()
+                result['agent_id'] = task_manager.assistant_id
+                result['created_at'] = datetime.now().isoformat()
+                result['model'] = task_manager.task_config["tools_config"]["llm_agent"]["model"]
+                result['temperature'] = task_manager.task_config["tools_config"]["llm_agent"]["temperature"]
+                result['max_tokens'] = task_manager.task_config["tools_config"]["llm_agent"]["max_tokens"]
+                result['synthesizer_voice'] = task_manager.synthesizer_voice
+                result['synthesizer_provider'] = task_manager.synthesizer_provider
+            if task["task_type"] == "summarization":
+                result['summarised_data']  = task_manager.summarized_data
             if task["task_type"] == "extraction":
                 input_parameters["extraction_details"] = task_output["extracted_data"]
+        logger.info("Updating Execution Information in MongoDB")
+        db['execution_metadata'].insert_one(result)
+        logger.info("Done Updating Execution Information in MongoDB")
         logger.info("Done with execution of the agent")

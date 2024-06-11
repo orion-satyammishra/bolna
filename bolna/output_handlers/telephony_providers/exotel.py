@@ -10,10 +10,8 @@ load_dotenv()
 
 class ExotelOutputHandler(TelephonyOutputHandler):
     def __init__(self, websocket=None, mark_set=None, log_dir_name=None):
-        io_provider = 'exotel'
-
-        super().__init__(io_provider, websocket, mark_set, log_dir_name)
-        self.is_chunking_supported = True
+        super().__init__(websocket, mark_set, log_dir_name)
+        self.io_provider = 'exotel'
 
     async def handle_interruption(self):
         logger.info("interrupting because user spoke in between")
