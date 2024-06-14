@@ -11,6 +11,7 @@ import wave
 import numpy as np
 import aiofiles
 import torch
+import datetime
 import torchaudio
 from scipy.io import wavfile
 from botocore.exceptions import BotoCoreError, ClientError
@@ -508,3 +509,25 @@ def list_number_of_wav_files_in_directory(directory):
 def get_file_names_in_directory(directory):
     return os.listdir(directory)
 
+def convert_to_request_log(message, meta_info, model, component = "transcriber", direction = 'response', is_cached = False, engine=None, run_id = None):
+    log = dict()
+    log['direction'] = direction
+    log['data'] = message
+    log['leg_id'] = meta_info['request_id'] if "request_id" in meta_info else "1234"
+    log['time'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log['component'] = component
+    log['sequence_id'] = meta_info['sequence_id']
+    log['model'] = model
+    log['cached'] = is_cached
+    if component == "llm":
+        log['latency'] = meta_info.get('llm_latency', None) if direction == "response" else None
+    if component == "synthesizer":
+        log['latency'] = meta_info.get('synthesizer_latency', None) if direction == "response" else None
+    if component == "transcriber":
+        log['latency'] = meta_info.get('transcriber_latency', None) if direction == "response" else None
+        if 'is_final' in meta_info and meta_info['is_final']:
+            log['is_final'] = True
+    else:
+        log['is_final'] = False #This is logged only for users to know final transcript from the transcriber
+    log['engine'] = engine
+    asyncio.create_task(write_request_logs(log, run_id))
